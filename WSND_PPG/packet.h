@@ -69,5 +69,9 @@ struct packet_idnack
 unsigned int unpackUART(const char *uartReceived, unsigned int size, void (*pktCBFunction)(char *, unsigned int));
 void freePktbuf();
 unsigned int packUART(const char *packet, unsigned int sizePacket, char *uartBuf, unsigned int sizeUartBuf);
+enum PACKET_RTN_CODE getPacketType(const char *packet, unsigned int sizePacket);
+int unpackBasePacket(char *packet, unsigned int sizePacket, struct packet_base *outstruct, char **varStart, unsigned int *varSize);
+int unpackIdentityPacket(const char *packet, unsigned int sizePacket, struct packet_identity *outstruct);
+int unpackIdnackPacket(const char *packet, unsigned int sizePacket, struct packet_idnack *outstruct);
 
 #endif /* PACKET_H_ */

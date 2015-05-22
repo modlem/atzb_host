@@ -207,6 +207,30 @@ enum PACKET_RTN_CODE getPacketType(const char *packet, unsigned int sizePacket)
 	return PACKET_RTN_UNKNOWN;
 }
 
+unsigned short _c2us(const char *c)
+{
+	unsigned short *rtn = (unsigned short*)c;
+	return *rtn;
+}
+
+int _c2i(const char *c)
+{
+	int *rtn = (int *)c;
+	return *rtn;
+}
+
+unsigned int _c2ui(const char *c)
+{
+	unsigned int *rtn = (unsigned int*)c;
+	return *rtn;
+}
+
+unsigned long _c2ul(const char *c)
+{
+	unsigned long *rtn = (unsigned long*)c;
+	return *rtn;
+}
+
 int unpackBasePacket(char *packet, unsigned int sizePacket, struct packet_base *outstruct, char **varStart, unsigned int *varSize)
 {
 	if(sizePacket < PACKET_SIZE_BASE)
@@ -217,15 +241,15 @@ int unpackBasePacket(char *packet, unsigned int sizePacket, struct packet_base *
 	{
 		outstruct->msgType = (unsigned char)packet[0];
 		outstruct->nodeType = (unsigned char)packet[1];
-		outstruct->fullAddress = (unsigned long)packet[2];
-		outstruct->shortAddress = (unsigned short)packet[10];
-		outstruct->softwareVersion = (unsigned int)packet[12];
-		outstruct->channelMask = (unsigned int)packet[16];
-		outstruct->panID = (unsigned short)packet[20];
+		outstruct->fullAddress = _c2ul(&packet[2]);
+		outstruct->shortAddress = _c2us(&packet[10]);
+		outstruct->softwareVersion = _c2ui(&packet[12]);
+		outstruct->channelMask = _c2ui(&packet[16]);
+		outstruct->panID = _c2us(&packet[20]);
 		outstruct->workingChannel = (unsigned char)packet[22];
-		outstruct->parentAddress = (unsigned short)packet[23];
+		outstruct->parentAddress = _c2us(&packet[23]);
 		outstruct->lqi = (unsigned char)packet[25];
-		outstruct->rssi = (char)packet[26];
+		outstruct->rssi = packet[26];
 		*varStart = &packet[27];
 		*varSize = sizePacket - PACKET_SIZE_BASE;
 		return 1;
@@ -241,9 +265,9 @@ int unpackIdentityPacket(const char *packet, unsigned int sizePacket, struct pac
 	else
 	{
 		outstruct->msgType = (unsigned char)packet[0];
-		outstruct->fullAddress = (unsigned long)packet[1];
-		outstruct->duration = (unsigned short)packet[9];
-		outstruct->period = (unsigned short)packet[11];
+		outstruct->fullAddress = _c2ul(&packet[1]);
+		outstruct->duration = _c2us(&packet[9]);
+		outstruct->period = _c2us(&packet[11]);
 		return 1;
 	}
 }
@@ -258,7 +282,7 @@ int unpackIdnackPacket(const char *packet, unsigned int sizePacket, struct packe
 	{
 		outstruct->msgType = (unsigned char)packet[0];
 		outstruct->identityStatus = (unsigned char)packet[1];
-		outstruct->fullAddress = (unsigned long)packet[2];
+		outstruct->fullAddress = _c2ul(&packet[2]);
 		return 1;
 	}
 }
