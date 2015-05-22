@@ -5,25 +5,9 @@
  *      Author: Jason Kwon
  */
 
-
+#include "packet.h"
 #include <stdlib.h>
-
-#define _UART_PKT_DELIMITER		0x10
-#define _UART_PKT_START			0x02
-#define _UART_PKT_END			0x03
-
-enum UART_STATE
-{
-	UART_IDLE,
-	UART_DELIMITER,
-	UART_STARTED,
-};
-
-enum UART_RTN_CODE
-{
-	UART_RTN_CONTINUE,
-	UART_RTN_PACKET_DONE,
-};
+#include <string.h>
 
 enum UART_STATE uartState = UART_IDLE;
 int incomingTransmission = 0;
@@ -108,7 +92,7 @@ enum UART_RTN_CODE _parseUARTChar(const char chr, char *buf, unsigned int *bufPn
 	return rtn;
 }
 
-unsigned int unpackUART(const char *uartReceived, unsigned int size, void (*pktCBFunction)(const char *, unsigned int))
+unsigned int unpackUART(const char *uartReceived, unsigned int size, void (*pktCBFunction)(char *, unsigned int))
 {
 	unsigned int i;
 
@@ -125,7 +109,10 @@ unsigned int unpackUART(const char *uartReceived, unsigned int size, void (*pktC
 		{
 			if(checksum == (unsigned char)uartReceived[i])
 			{
-				pktCBFunction(pktBuf, pktBufPnt);
+				char *tmpbuf = (char*)malloc(pktBufPnt);
+				memcpy(tmpbuf, pktBuf, pktBufPnt);
+				pktCBFunction(tmpbuf, pktBufPnt);
+				free(tmpbuf);
 			}
 			pktBufPnt = 0;
 			uartRtn = UART_RTN_CONTINUE;
@@ -186,5 +173,92 @@ unsigned int packUART(const char *packet, unsigned int sizePacket, char *uartBuf
 		pktChecksum += (_UART_PKT_DELIMITER + _UART_PKT_END);
 		uartBuf[i++] = (char)pktChecksum;
 		return i;
+	}
+}
+
+enum PACKET_RTN_CODE getPacketType(const char *packet, unsigned int sizePacket)
+{
+	if(sizePacket > 0)
+	{
+		switch(packet[0])
+		{
+		case PACKET_RTN_BASE:
+			if(sizePacket < PACKET_SIZE_BASE)
+			{
+				break;
+			}
+			return PACKET_RTN_BASE;
+		case PACKET_RTN_IDENTITY:
+			if(sizePacket < PACKET_SIZE_IDENTITY)
+			{
+				break;
+			}
+			return PACKET_RTN_IDENTITY;
+		case PACKET_RTN_IDNACK:
+			if(sizePacket < PACKET_SIZE_IDNACK)
+			{
+				break;
+			}
+			return PACKET_RTN_IDNACK;
+		default:
+			break;
+		}
+	}
+	return PACKET_RTN_UNKNOWN;
+}
+
+int unpackBasePacket(char *packet, unsigned int sizePacket, struct packet_base *outstruct, char **varStart, unsigned int *varSize)
+{
+	if(sizePacket < PACKET_SIZE_BASE)
+	{
+		return 0;
+	}
+	else
+	{
+		outstruct->msgType = (unsigned char)packet[0];
+		outstruct->nodeType = (unsigned char)packet[1];
+		outstruct->fullAddress = (unsigned long)packet[2];
+		outstruct->shortAddress = (unsigned short)packet[10];
+		outstruct->softwareVersion = (unsigned int)packet[12];
+		outstruct->channelMask = (unsigned int)packet[16];
+		outstruct->panID = (unsigned short)packet[20];
+		outstruct->workingChannel = (unsigned char)packet[22];
+		outstruct->parentAddress = (unsigned short)packet[23];
+		outstruct->lqi = (unsigned char)packet[25];
+		outstruct->rssi = (char)packet[26];
+		*varStart = &packet[27];
+		*varSize = sizePacket - PACKET_SIZE_BASE;
+		return 1;
+	}
+}
+
+int unpackIdentityPacket(const char *packet, unsigned int sizePacket, struct packet_identity *outstruct)
+{
+	if(sizePacket < PACKET_SIZE_IDENTITY)
+	{
+		return 0;
+	}
+	else
+	{
+		outstruct->msgType = (unsigned char)packet[0];
+		outstruct->fullAddress = (unsigned long)packet[1];
+		outstruct->duration = (unsigned short)packet[9];
+		outstruct->period = (unsigned short)packet[11];
+		return 1;
+	}
+}
+
+int unpackIdnackPacket(const char *packet, unsigned int sizePacket, struct packet_idnack *outstruct)
+{
+	if(sizePacket < PACKET_SIZE_IDNACK)
+	{
+		return 0;
+	}
+	else
+	{
+		outstruct->msgType = (unsigned char)packet[0];
+		outstruct->identityStatus = (unsigned char)packet[1];
+		outstruct->fullAddress = (unsigned long)packet[2];
+		return 1;
 	}
 }
