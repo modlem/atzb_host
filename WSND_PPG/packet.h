@@ -33,7 +33,7 @@ enum PACKET_RTN_CODE
 	PACKET_RTN_IDNACK = 0x11,		// 10 bytes
 };
 
-#define PACKET_SIZE_BASE		27
+#define PACKET_SIZE_BASE			27
 struct packet_base
 {
 	unsigned char msgType;
@@ -49,7 +49,32 @@ struct packet_base
 	char rssi;
 };
 
-#define PACKET_SIZE_IDENTITY	13
+enum PACKET_RTN_BASE_VAR_CODE
+{
+	PACKET_RTN_BASE_VAR_UNKNOWN,
+	PACKET_RTN_BASE_VAR_01 = 0x01,	// should be 14 bytes
+	PACKET_RTN_BASE_VAR_20 = 0x20,	// at least 2 bytes
+};
+
+#define PACKET_SIZE_BASE_VAR01		14
+struct packet_base_var_01
+{
+	unsigned char paramType;
+	unsigned char paramLength;
+	unsigned int battery;
+	int temperature;
+	int light;
+};
+
+#define PACKET_SIZE_BASE_VAR20		2
+struct packet_base_var_20
+{
+	unsigned char paramType;
+	unsigned char nameSize;
+	char *name;
+};
+
+#define PACKET_SIZE_IDENTITY		13
 struct packet_identity
 {
 	unsigned char msgType;
@@ -58,7 +83,7 @@ struct packet_identity
 	unsigned short period;
 };
 
-#define PACKET_SIZE_IDNACK		10
+#define PACKET_SIZE_IDNACK			10
 struct packet_idnack
 {
 	unsigned char msgType;
